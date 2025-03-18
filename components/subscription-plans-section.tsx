@@ -306,7 +306,10 @@ export function SubscriptionPlansSection() {
 
                 <div className="mb-6 pb-6 border-b border-white/10">
                   <div className="flex items-baseline">
-                    <span className="text-4xl font-bold text-white">{plan.price}</span>
+                    <span className="text-4xl font-bold text-white">
+                      <span>₹</span>
+                      <span className="blur-lg">{plan.price.replace("₹", "")}</span>
+                    </span>
                     <span className="text-gray-400 ml-2">{plan.period}</span>
                     {plan.limited && <span className="text-gray-400 text-xs ml-2">{plan.limited}</span>}
                   </div>
