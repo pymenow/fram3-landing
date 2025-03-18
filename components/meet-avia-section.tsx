@@ -68,6 +68,8 @@ function MeetAviaSection() {
   const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
   const featureTextRefs = useRef<Array<HTMLHeadingElement | null>>([])
   const [isVideoHovered, setIsVideoHovered] = useState(false)
+  // Add this to the existing state variables
+  const [videoPlaybackFailed, setVideoPlaybackFailed] = useState(false)
 
   const words = ["AUTOMATED", "VIDEO", "INTELLIGENCE", "ASSISTANT"]
   const letters = "AVIA"
@@ -135,14 +137,14 @@ function MeetAviaSection() {
 
     // Start video after text animation begins
     const videoTimer = setTimeout(() => {
-      if (videoRef.current) {
-        // Try to play the video, but don't worry if it fails
+      if (videoRef.current && !videoPlaybackFailed) {
+        // Try to play the video, but handle failure gracefully
         videoRef.current.play().catch((err) => {
-          console.warn("Video playback failed:", err)
-          // Show features even if video fails
+          console.warn("Initial video playback failed:", err)
+          setVideoPlaybackFailed(true)
           setVideoEnded(true)
-          // Make sure the fallback image is displayed
-          if (videoRef.current) {
+          // Only hide the video if it never played at all
+          if (videoRef.current && videoRef.current.currentTime === 0) {
             videoRef.current.style.display = "none"
           }
         })
@@ -153,11 +155,11 @@ function MeetAviaSection() {
       clearTimeout(videoTimer)
       clearTimeout(featuresTimer)
     }
-  }, [isInView, textAnimationComplete])
+  }, [isInView, textAnimationComplete, videoPlaybackFailed])
 
   // Handle pause between loops
   useEffect(() => {
-    if (!isPaused) return
+    if (!isPaused || videoPlaybackFailed) return
 
     const now = Date.now()
     const elapsedPauseTime = now - pauseTimestamp
@@ -167,9 +169,12 @@ function MeetAviaSection() {
       setIsPaused(false)
 
       // Resume playback
-      if (videoRef.current) {
+      if (videoRef.current && !videoPlaybackFailed) {
         videoRef.current.currentTime = 1 // Set to 1-second mark
-        videoRef.current.play().catch((err) => console.error("Video playback failed:", err))
+        videoRef.current.play().catch((err) => {
+          console.error("Video playback failed:", err)
+          setVideoPlaybackFailed(true)
+        })
       }
     } else {
       // Check again after some time
@@ -179,16 +184,19 @@ function MeetAviaSection() {
           setIsPaused(false)
 
           // Resume playback
-          if (videoRef.current) {
+          if (videoRef.current && !videoPlaybackFailed) {
             videoRef.current.currentTime = 1 // Set to 1-second mark
-            videoRef.current.play().catch((err) => console.error("Video playback failed:", err))
+            videoRef.current.play().catch((err) => {
+              console.error("Video playback failed:", err)
+              setVideoPlaybackFailed(true)
+            })
           }
         }
       }, remainingTime)
 
       return () => clearTimeout(checkTimer)
     }
-  }, [isPaused, pauseTimestamp])
+  }, [isPaused, pauseTimestamp, videoPlaybackFailed])
 
   // Handle video events
   useEffect(() => {
@@ -642,8 +650,10 @@ function MeetAviaSection() {
                   muted
                   playsInline
                   preload="auto"
-                  poster="https://storage.googleapis.com/fram3-ext/Web2/img/avia-poster.jpg"
+                  poster="https://storage.googleapis.com/fram3-ext/Web2/img/avia-poster.png"
                   onTimeUpdate={(e) => {
+                    if (videoPlaybackFailed) return
+
                     const video = e.target as HTMLVideoElement
 
                     // For first play, show features earlier and stop at 3 seconds
@@ -658,12 +668,15 @@ function MeetAviaSection() {
 
                       // After a brief pause, start the loop
                       setTimeout(() => {
-                        if (videoRef.current) {
+                        if (videoRef.current && !videoPlaybackFailed) {
                           videoRef.current.currentTime = 1 // Set to 1-second mark
                           videoRef.current.play().catch((err) => {
-                            console.warn("Video playback failed:", err)
-                            // Show features even if video fails
-                            setShowFeatures(true)
+                            console.warn("Video playback failed on loop:", err)
+                            // Only set videoPlaybackFailed if the video never loaded successfully
+                            if (!videoLoaded) {
+                              setVideoPlaybackFailed(true)
+                            }
+                            // Don't hide the video element if it initially played
                           })
                         }
                       }, 500)
@@ -676,30 +689,28 @@ function MeetAviaSection() {
                       setPauseTimestamp(Date.now())
                     }
                   }}
-                  onEnded={() => {
-                    setVideoEnded(true)
-                    // Show features immediately
-                    setShowFeatures(true)
-                  }}
                   onError={(e) => {
                     console.warn("Video failed to load", e)
-                    // Show features even if video fails
+                    setVideoPlaybackFailed(true)
                     setShowFeatures(true)
-                    setVideoEnded(true)
-                    // Make sure the fallback image is displayed
-                    if (videoRef.current) {
-                      videoRef.current.style.display = "none"
+                    // Only hide video if it never loaded
+                    if (!videoLoaded) {
+                      if (videoRef.current) {
+                        videoRef.current.style.display = "none"
+                      }
                     }
                   }}
                 />
                 {/* Fallback image in case video fails */}
                 <div
-                  className={`absolute inset-0 z-5 flex items-center justify-center ${videoLoaded && !videoEnded ? "opacity-0" : "opacity-100"}`}
+                  className={`absolute inset-0 z-5 flex items-center justify-center bg-black ${
+                    videoPlaybackFailed && !videoLoaded ? "opacity-100" : "opacity-0"
+                  }`}
                   style={{ transition: "opacity 0.3s ease" }}
                 >
                   <img
-                    src="https://storage.googleapis.com/fram3-ext/Web2/img/avia-poster.jpg"
-                    alt="AVIA AI Assistant"
+                    src="https://storage.googleapis.com/fram3-ext/Web2/img/avia-poster.png"
+                    alt="AVIA"
                     className="w-full h-full object-contain"
                     style={{ transform: "translateX(-70px)" }}
                   />
