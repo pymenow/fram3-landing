@@ -39,7 +39,7 @@ const capabilities = [
   },
   {
     title: "Auto Cutter",
-    description: "Autonomously handles transitions and cutting points to deliver polished, studio-grade videos—fast.",
+    description: "Autonomously handles transitions and cutting points to deliver polished, studio-grade videos",
     icon: Film,
     color: "#9000ff",
   },
