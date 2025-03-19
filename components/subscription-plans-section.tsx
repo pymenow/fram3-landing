@@ -134,8 +134,7 @@ const yearlyPlans = [
 export function SubscriptionPlansSection() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly")
   const plans = billingCycle === "monthly" ? monthlyPlans : yearlyPlans
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-  const [hoveredButtonIndex, setHoveredButtonIndex] = useState<number | null>(null)
+  // Removed hover states as we're disabling hover interactions
   const [isContactFormOpen, setIsContactFormOpen] = useState(false)
 
   // Add intersection observer for better performance
@@ -161,20 +160,6 @@ export function SubscriptionPlansSection() {
   }
 
   // Optimize the card hover animations
-  const cardHoverAnimation = {
-    rest: {
-      y: 0,
-      scale: 1,
-      boxShadow: "0 0 0 rgba(0, 0, 0, 0)",
-      transition: { duration: 0.3, ease: "easeOut" },
-    },
-    hover: (plan) => ({
-      y: -10,
-      scale: 1.03,
-      boxShadow: plan.popular ? "0 20px 30px -10px rgba(255, 215, 0, 0.2)" : "0 20px 30px -10px rgba(0, 0, 0, 0.3)",
-      transition: { duration: 0.3, ease: "easeOut" },
-    }),
-  }
 
   // Add a class to the section for transition effects
   return (
@@ -277,29 +262,21 @@ export function SubscriptionPlansSection() {
             <motion.div
               key={index}
               className={cn(
-                "pricing-card group relative rounded-2xl backdrop-blur-sm border transition-all duration-500",
-                plan.popular
-                  ? "border-fram3-yellow/30 bg-gradient-to-b from-black/80 to-black/40"
-                  : "border-white/10 bg-gradient-to-b from-black/60 to-black/30",
+                "pricing-card group relative rounded-2xl backdrop-blur-xl border transition-all duration-500 bg-white/5",
+                plan.popular ? "border-fram3-yellow/30" : "border-white/10",
               )}
               variants={fadeInUpVariants}
               custom={0.7 + index * 0.15}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
-              data-active={hoveredIndex === index ? "true" : "false"}
               data-popular={plan.popular ? "true" : "false"}
-              animate={hoveredIndex === index ? "hover" : "rest"}
-              variants={cardHoverAnimation}
-              custom={plan}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-fram3-yellow text-black text-xs font-bold rounded-full shadow-lg">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-fram3-yellow text-black text-xs font-bold rounded-full shadow-lg invisible">
                   Most Popular
                 </div>
               )}
 
-              <div className="p-8 h-full flex flex-col">
-                <div className="mb-6">
+              <div className="p-8 h-full flex flex-col backdrop-blur-md">
+                <div className="mb-6 blur-sm">
                   <h3 className="text-2xl font-bold text-white mb-1 subheadline">{plan.name}</h3>
                   <p className="text-sm text-gray-400">{plan.forText}</p>
                 </div>
@@ -307,15 +284,15 @@ export function SubscriptionPlansSection() {
                 <div className="mb-6 pb-6 border-b border-white/10">
                   <div className="flex items-baseline">
                     <span className="text-4xl font-bold text-white">
-                      <span>₹</span>
+                      <span className="blur-lg">₹</span>
                       <span className="blur-lg">{plan.price.replace("₹", "")}</span>
                     </span>
-                    <span className="text-gray-400 ml-2">{plan.period}</span>
-                    {plan.limited && <span className="text-gray-400 text-xs ml-2">{plan.limited}</span>}
+                    <span className="text-gray-400 ml-2 blur-sm">{plan.period}</span>
+                    {plan.limited && <span className="text-gray-400 text-xs ml-2 blur-sm">{plan.limited}</span>}
                   </div>
                 </div>
 
-                <div className="flex-grow mb-8">
+                <div className="flex-grow mb-8 blur-sm">
                   <ul className="space-y-4">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start">
@@ -352,37 +329,13 @@ export function SubscriptionPlansSection() {
                     className={cn(
                       "w-full py-3 px-6 rounded-xl text-center text-sm font-semibold transition-all duration-300",
                       plan.popular
-                        ? "bg-fram3-yellow text-black shadow-lg shadow-fram3-yellow/20 hover:shadow-fram3-yellow/30 hover:scale-[1.02]"
-                        : "bg-white/10 text-white border border-white/20 hover:bg-white/20",
+                        ? "bg-fram3-yellow text-black shadow-lg shadow-fram3-yellow/20"
+                        : "bg-white/10 text-white border border-white/20",
                     )}
-                    onMouseEnter={() => setHoveredButtonIndex(index)}
-                    onMouseLeave={() => setHoveredButtonIndex(null)}
                   >
                     {plan.cta}
                   </button>
-
-                  {plan.popular && (
-                    <p className="text-xs text-center text-gray-500 mt-3">30-day money-back guarantee</p>
-                  )}
                 </div>
-              </div>
-
-              {/* Enhanced hover effect with glow */}
-              <div
-                className={cn(
-                  "absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-700 pointer-events-none",
-                  hoveredIndex === index ? "opacity-100" : "opacity-0",
-                )}
-              >
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                <div className="absolute left-0 top-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent"></div>
-                <div className="absolute right-0 top-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent"></div>
-
-                {/* Add a subtle glow effect */}
-                <div
-                  className={cn("absolute inset-0 rounded-2xl", plan.popular ? "bg-fram3-yellow/5" : "bg-white/5")}
-                ></div>
               </div>
             </motion.div>
           ))}
